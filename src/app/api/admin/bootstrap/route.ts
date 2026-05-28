@@ -26,9 +26,17 @@ const BUCKET = process.env.S3_BUCKET_NAME ?? 'enpi-sensors';
 const FILE_RE = /^(air|light)_.+_v([\d.]+)_(\d{4}-\d{2}-\d{2})\.csv\.gz$/;
 
 export async function POST() {
+  if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+    return NextResponse.json(
+      { error: 'AWS credentials not configured. Check AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY env vars.' },
+      { status: 500 },
+    );
+  }
+
   const devices: Record<string, DeviceRecord> = {};
   let fileCount = 0;
 
+  try {
   let continuationToken: string | undefined;
   do {
     const res = await s3.send(
@@ -98,4 +106,8 @@ export async function POST() {
     devices: Object.keys(devices).length,
     filesScanned: fileCount,
   });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

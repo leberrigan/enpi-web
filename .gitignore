@@ -6,3 +6,6 @@
 node_modules/
 out/
 .claude/
+.vercel
+.env*
+enpi-process-uploads.zip

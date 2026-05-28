@@ -17,12 +17,17 @@ export default function NavBar() {
         <span className="text-brand-100">ENPI</span>
         <span className="text-white/70 font-normal text-sm">Fleet Dashboard</span>
       </Link>
-      <button
-        onClick={handleLogout}
-        className="text-sm text-white/60 hover:text-white transition-colors"
-      >
-        Sign out
-      </button>
+      <div className="flex items-center gap-4">
+        <Link href="/admin" className="text-sm text-white/60 hover:text-white transition-colors">
+          Admin
+        </Link>
+        <button
+          onClick={handleLogout}
+          className="text-sm text-white/60 hover:text-white transition-colors"
+        >
+          Sign out
+        </button>
+      </div>
     </header>
   );
 }
