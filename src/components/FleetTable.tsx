@@ -30,7 +30,9 @@ export default function FleetTable({ devices }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {sorted.map((d) => (
+            {sorted.map((d) => {
+              const hasLocation = d.motus && d.motus.latitude !== 0 && d.motus.longitude !== 0;
+              return (
               <tr key={d.deviceId} className="hover:bg-gray-50 cursor-pointer">
                 <td className="px-4 py-3">
                   <Link href={`/device/${encodeURIComponent(d.deviceId)}`} className="block">
@@ -38,6 +40,11 @@ export default function FleetTable({ devices }: Props) {
                       {d.motus?.stationName ?? d.deviceId}
                     </p>
                     <p className="text-gray-400 text-xs font-mono">{d.deviceId}</p>
+                    {!hasLocation && (
+                      <p className="text-xs text-amber-600 mt-0.5" title="This device has no coordinates in the Motus database and will not appear on the map">
+                        No map location
+                      </p>
+                    )}
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">
@@ -49,7 +56,8 @@ export default function FleetTable({ devices }: Props) {
                   </span>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

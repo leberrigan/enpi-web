@@ -51,8 +51,21 @@ export default async function DashboardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            <div className="lg:col-span-3">
+            <div className="lg:col-span-3 space-y-2">
               <FleetMap devices={mappableDevices} />
+              {mappableDevices.length === 0 && devices.length > 0 && (
+                <p className="text-xs text-amber-600 px-1">
+                  No devices found in the Motus database with valid coordinates — map is empty.
+                  Devices are listed in the table on the right. If your receivers are registered
+                  in Motus, their serial numbers (e.g. <code>SG-BC4ERPI3CF2A</code>) must match
+                  the <code>serno</code> field in the Motus receiver list.
+                </p>
+              )}
+              {mappableDevices.length > 0 && mappableDevices.length < devices.length && (
+                <p className="text-xs text-amber-600 px-1">
+                  {devices.length - mappableDevices.length} device(s) not shown on map — no Motus coordinates found.
+                </p>
+              )}
             </div>
             <div className="lg:col-span-2">
               <FleetTable devices={devices} />

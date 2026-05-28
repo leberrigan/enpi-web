@@ -5,7 +5,13 @@ import NavBar from '@/components/NavBar';
 
 export default function AdminPage() {
   const [status, setStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
-  const [result, setResult] = useState<{ devices: number; filesScanned: number } | null>(null);
+  const [result, setResult] = useState<{
+    devices: number;
+    filesScanned: number;
+    lambdaTriggered: number;
+    lambdaSkipped: number;
+    lambdaConfigured: boolean;
+  } | null>(null);
   const [error, setError] = useState('');
 
   async function runBootstrap() {
@@ -21,7 +27,7 @@ export default function AdminPage() {
         throw new Error(`Server returned unexpected response (HTTP ${res.status}): ${text.slice(0, 200)}`);
       }
       if (!res.ok || data.error) throw new Error(data.error ?? 'Unknown error');
-      setResult(data as { devices: number; filesScanned: number });
+      setResult(data as typeof result);
       setStatus('done');
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -56,13 +62,25 @@ export default function AdminPage() {
           </button>
 
           {status === 'done' && result && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800">
-              Done. Found <strong>{result.devices}</strong> device(s) across{' '}
-              <strong>{result.filesScanned}</strong> files. Fleet manifest written to S3.
-              <br />
-              <span className="text-green-600 mt-1 block">
-                Go to the <a href="/dashboard" className="underline">dashboard</a> to see your devices.
-              </span>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800 space-y-1">
+              <p>
+                Found <strong>{result.devices}</strong> device(s) across{' '}
+                <strong>{result.filesScanned}</strong> files. Fleet manifest written to S3.
+              </p>
+              {result.lambdaConfigured ? (
+                <p>
+                  Triggered <strong>{result.lambdaTriggered}</strong> Lambda invocation(s) in the
+                  background — summaries will appear on the dashboard in a minute or two.
+                </p>
+              ) : (
+                <p className="text-yellow-700">
+                  <strong>LAMBDA_FUNCTION_NAME</strong> env var not set — summaries were not
+                  generated. Add it to Vercel and redeploy, then run bootstrap again.
+                </p>
+              )}
+              <p>
+                <a href="/dashboard" className="underline">Go to dashboard</a>
+              </p>
             </div>
           )}
 

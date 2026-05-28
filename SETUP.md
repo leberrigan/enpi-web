@@ -42,10 +42,22 @@ This user gives Vercel read-only access to your S3 bucket.
         "arn:aws:s3:::enpi-sensors",
         "arn:aws:s3:::enpi-sensors/*"
       ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:PutObject"],
+      "Resource": "arn:aws:s3:::enpi-sensors/fleet-manifest.json"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["lambda:InvokeFunction"],
+      "Resource": "arn:aws:lambda:us-east-1:YOUR_ACCOUNT_ID:function:enpi-process-upload"
     }
   ]
 }
 ```
+
+Replace `YOUR_ACCOUNT_ID` with your 12-digit AWS account ID (shown in the top-right corner of the AWS console).
 
 6. Name the policy `enpi-web-read`, click **Create policy**
 7. Go to the user → **Security credentials → Create access key**
@@ -182,6 +194,7 @@ You can come back and update this after you know your Vercel URL. Until then you
    | `AWS_SECRET_ACCESS_KEY` | From Step 1 |
    | `AWS_REGION` | `us-east-1` |
    | `S3_BUCKET_NAME` | `enpi-sensors` |
+   | `LAMBDA_FUNCTION_NAME` | `enpi-process-upload` |
 
 5. After adding env vars, redeploy so they take effect:
    ```bash
