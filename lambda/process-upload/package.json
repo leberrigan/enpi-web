@@ -1,0 +1,8 @@
+{
+  "name": "enpi-process-upload",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Lambda function to process ENPI sensor file uploads and generate summaries",
+  "main": "index.mjs",
+  "dependencies": {}
+}
