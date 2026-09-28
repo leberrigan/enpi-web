@@ -2,38 +2,66 @@ import type { MotusDevice } from '@/types';
 
 const RECEIVERS_URL = 'https://motus.b-cdn.net/data/dashboard/receivers.json';
 const DEPLOYMENTS_URL = 'https://motus.b-cdn.net/data/dashboard/stationDeployments.json';
+const STATIONS_URL = 'https://motus.b-cdn.net/data/dashboard/stations.json';
+
+// Motus API responses wrap the array in a "results" key (occasionally "data")
+function unwrapResults(json: unknown): unknown[] {
+  if (Array.isArray(json)) return json;
+  const obj = json as Record<string, unknown>;
+  return (obj.results as unknown[] | undefined) ?? (obj.data as unknown[] | undefined) ?? [];
+}
 
 // Cache for 24 hours via Next.js fetch cache
 async function fetchMotusReceivers(): Promise<Record<string, MotusDevice>> {
-  const [receiversRes, deploymentsRes] = await Promise.all([
+  const [receiversRes, deploymentsRes, stationsRes] = await Promise.all([
     fetch(RECEIVERS_URL, { next: { revalidate: 86400 } }),
     fetch(DEPLOYMENTS_URL, { next: { revalidate: 86400 } }),
+    fetch(STATIONS_URL, { next: { revalidate: 86400 } }),
   ]);
 
-  if (!receiversRes.ok || !deploymentsRes.ok) {
+  if (!receiversRes.ok || !deploymentsRes.ok || !stationsRes.ok) {
     throw new Error('Failed to fetch Motus data');
   }
 
-  const receivers = await receiversRes.json();
-  const deployments = await deploymentsRes.json();
+  const receiverList = unwrapResults(await receiversRes.json());
+  const deploymentList = unwrapResults(await deploymentsRes.json());
+  const stationList = unwrapResults(await stationsRes.json());
 
-  // Motus API returns arrays inside a "data" key; handle both formats
-  const receiverList: unknown[] = Array.isArray(receivers) ? receivers : (receivers.data ?? []);
-  const deploymentList: unknown[] = Array.isArray(deployments) ? deployments : (deployments.data ?? []);
+  // Coordinates live on stations.json, keyed by stationID
+  const stationById: Record<string, { name: string; lat: number; lon: number }> = {};
+  for (const st of stationList) {
+    const s = st as Record<string, unknown>;
+    if (s.stationID == null) continue;
+    stationById[String(s.stationID)] = {
+      name: String(s.stationName ?? ''),
+      lat: Number(s.latitude ?? 0),
+      lon: Number(s.longitude ?? 0),
+    };
+  }
 
-  // Build a lookup: serialNumber → station info from deployments
-  // stationDeployments links receivers to stations with lat/lon
-  const deploymentByStn: Record<string | number, { name: string; lat: number; lon: number; country?: string }> = {};
+  // stationDeployments.json links a receiver (by sensorID) to a station over a
+  // time range. A receiver can have several deployments over its lifetime, so
+  // pick the currently-active one (tsEnd == null), falling back to the most
+  // recent by tsStart.
+  const stationIdBySensor: Record<string, number> = {};
+  const bestDeploymentBySensor: Record<string, { active: boolean; tsStart: number }> = {};
   for (const dep of deploymentList) {
     const d = dep as Record<string, unknown>;
-    const stnId = d.stationID ?? d.id;
-    if (stnId != null) {
-      deploymentByStn[String(stnId)] = {
-        name: String(d.stationName ?? d.name ?? ''),
-        lat: Number(d.latitude ?? d.lat ?? 0),
-        lon: Number(d.longitude ?? d.lon ?? 0),
-        country: d.countryCode != null ? String(d.countryCode) : undefined,
-      };
+    const sensorId = d.sensorID;
+    const stationId = d.stationID;
+    if (sensorId == null || stationId == null) continue;
+
+    const key = String(sensorId);
+    const active = d.tsEnd == null;
+    const tsStart = Number(d.tsStart ?? 0);
+    const current = bestDeploymentBySensor[key];
+
+    const isBetter =
+      !current || (active && !current.active) || (active === current.active && tsStart > current.tsStart);
+
+    if (isBetter) {
+      bestDeploymentBySensor[key] = { active, tsStart };
+      stationIdBySensor[key] = Number(stationId);
     }
   }
 
@@ -43,19 +71,15 @@ async function fetchMotusReceivers(): Promise<Record<string, MotusDevice>> {
     const serno = String(r.serno ?? r.serialNumber ?? r.receiverSerialNumber ?? '');
     if (!serno) continue;
 
-    const stnId = r.stationID ?? r.id;
-    const stn = stnId != null ? deploymentByStn[String(stnId)] : undefined;
-
-    // Some receivers include lat/lon directly
-    const lat = Number(r.latitude ?? r.lat ?? stn?.lat ?? 0);
-    const lon = Number(r.longitude ?? r.lon ?? stn?.lon ?? 0);
+    const sensorId = r.sensorID ?? r.sensorId;
+    const stationId = sensorId != null ? stationIdBySensor[String(sensorId)] : undefined;
+    const station = stationId != null ? stationById[String(stationId)] : undefined;
 
     result[serno] = {
       serialNumber: serno,
-      stationName: String(r.stationName ?? stn?.name ?? serno),
-      latitude: lat,
-      longitude: lon,
-      countryCode: stn?.country,
+      stationName: station?.name || serno,
+      latitude: station?.lat ?? 0,
+      longitude: station?.lon ?? 0,
     };
   }
 
