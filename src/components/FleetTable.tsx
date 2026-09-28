@@ -45,6 +45,11 @@ export default function FleetTable({ devices }: Props) {
                         No map location
                       </p>
                     )}
+                    {!d.hasData && (
+                      <p className="text-xs text-red-500 mt-0.5" title="This device's most recent upload parsed but every sensor reading in it was NA">
+                        No data (NA only)
+                      </p>
+                    )}
                   </Link>
                 </td>
                 <td className="px-4 py-3 text-gray-600 text-xs whitespace-nowrap">

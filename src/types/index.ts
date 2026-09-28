@@ -80,4 +80,6 @@ export interface FleetDevice {
   record: DeviceRecord;
   motus: MotusDevice | null;
   status: DeviceStatus;
+  /** False when the device's most recent upload parsed but every sensor reading in it was NA. */
+  hasData: boolean;
 }
