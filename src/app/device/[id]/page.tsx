@@ -31,7 +31,10 @@ export default async function DevicePage({ params, searchParams }: PageProps) {
   ]);
   const hasValidLocation = !!motus && motus.latitude !== 0 && motus.longitude !== 0;
 
-  const cutoff = new Date();
+  // Anchor the day-range window on the device's last upload, not today — an
+  // offline device's data can be well outside "the last N calendar days from
+  // now", which otherwise always looked like it had nothing to show.
+  const cutoff = new Date(record.lastSeen);
   cutoff.setDate(cutoff.getDate() - days);
   const cutoffStr = cutoff.toISOString().slice(0, 10);
 
