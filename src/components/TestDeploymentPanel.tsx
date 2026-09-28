@@ -34,12 +34,17 @@ async function parseJsonResponse(res: Response): Promise<any> {
 
 export default function TestDeploymentPanel({ deviceId, initialDeployments, dataRange }: Props) {
   const [deployments, setDeployments] = useState(initialDeployments);
+  const [showForm, setShowForm] = useState(initialDeployments.length === 0);
   const [stationName, setStationName] = useState('');
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [startDate, setStartDate] = useState(dataRange.firstSeen);
   const [endDate, setEndDate] = useState(dataRange.lastSeen);
-  const [ongoing, setOngoing] = useState(false);
+  // Default to ongoing: a deployment being added here is almost always meant to
+  // cover "right now" (that's why the device has no location in the first
+  // place), and pre-populating the end date from past upload data would
+  // otherwise silently create an already-expired window.
+  const [ongoing, setOngoing] = useState(true);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,8 +79,9 @@ export default function TestDeploymentPanel({ deviceId, initialDeployments, data
       setLongitude(null);
       setStartDate(dataRange.firstSeen);
       setEndDate(dataRange.lastSeen);
-      setOngoing(false);
+      setOngoing(true);
       setNotes('');
+      setShowForm(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to add test deployment');
     } finally {
@@ -132,6 +138,16 @@ export default function TestDeploymentPanel({ deviceId, initialDeployments, data
         </ul>
       )}
 
+      {!showForm && (
+        <button
+          onClick={() => setShowForm(true)}
+          className="text-sm text-brand-600 hover:underline font-medium"
+        >
+          + Add new deployment
+        </button>
+      )}
+
+      {showForm && (
       <form onSubmit={handleSubmit} className="space-y-3">
         <input
           placeholder="Station / site name"
@@ -207,14 +223,26 @@ export default function TestDeploymentPanel({ deviceId, initialDeployments, data
           className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
         />
         {error && <p className="text-xs text-red-500">{error}</p>}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full bg-brand-600 text-white text-sm rounded py-1.5 disabled:opacity-50"
-        >
-          {submitting ? 'Adding…' : 'Add test deployment'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="flex-1 bg-brand-600 text-white text-sm rounded py-1.5 disabled:opacity-50"
+          >
+            {submitting ? 'Adding…' : 'Add test deployment'}
+          </button>
+          {deployments.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="px-4 text-sm text-gray-600 hover:text-gray-900"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </form>
+      )}
     </div>
   );
 }
