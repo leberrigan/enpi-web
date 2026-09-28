@@ -101,7 +101,11 @@ export default async function DevicePage({ params, searchParams }: PageProps) {
         </div>
 
         {(!hasValidLocation || testDeployments.length > 0) && (
-          <TestDeploymentPanel deviceId={deviceId} initialDeployments={testDeployments} />
+          <TestDeploymentPanel
+            deviceId={deviceId}
+            initialDeployments={testDeployments}
+            dataRange={{ firstSeen: record.firstSeen, lastSeen: record.lastSeen }}
+          />
         )}
 
         {/* Summary cards */}

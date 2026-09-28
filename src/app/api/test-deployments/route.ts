@@ -12,8 +12,12 @@ async function isAuthed(request: NextRequest): Promise<boolean> {
 }
 
 export async function GET() {
-  const file = await getTestDeployments();
-  return NextResponse.json(file);
+  try {
+    const file = await getTestDeployments();
+    return NextResponse.json(file);
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Failed to load test deployments' }, { status: 500 });
+  }
 }
 
 interface CreateBody {
@@ -27,65 +31,73 @@ interface CreateBody {
 }
 
 export async function POST(request: NextRequest) {
-  if (!(await isAuthed(request))) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-  }
-
-  let body: CreateBody;
   try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    if (!(await isAuthed(request))) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    let body: CreateBody;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    }
+
+    const { deviceId, stationName, latitude, longitude } = body;
+    if (
+      !deviceId ||
+      typeof latitude !== 'number' ||
+      typeof longitude !== 'number' ||
+      Number.isNaN(latitude) ||
+      Number.isNaN(longitude)
+    ) {
+      return NextResponse.json({ error: 'deviceId, latitude and longitude are required' }, { status: 400 });
+    }
+
+    const deployment: TestDeployment = {
+      id: randomUUID(),
+      deviceId,
+      stationName: stationName || deviceId,
+      latitude,
+      longitude,
+      tsStart: typeof body.tsStart === 'number' ? body.tsStart : Math.floor(Date.now() / 1000),
+      tsEnd: typeof body.tsEnd === 'number' ? body.tsEnd : null,
+      notes: body.notes || undefined,
+      createdAt: new Date().toISOString(),
+    };
+
+    const file = await getTestDeployments();
+    file.deployments.push(deployment);
+    await saveTestDeployments(file);
+
+    return NextResponse.json({ ok: true, deployment });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Failed to add test deployment' }, { status: 500 });
   }
-
-  const { deviceId, stationName, latitude, longitude } = body;
-  if (
-    !deviceId ||
-    typeof latitude !== 'number' ||
-    typeof longitude !== 'number' ||
-    Number.isNaN(latitude) ||
-    Number.isNaN(longitude)
-  ) {
-    return NextResponse.json({ error: 'deviceId, latitude and longitude are required' }, { status: 400 });
-  }
-
-  const deployment: TestDeployment = {
-    id: randomUUID(),
-    deviceId,
-    stationName: stationName || deviceId,
-    latitude,
-    longitude,
-    tsStart: typeof body.tsStart === 'number' ? body.tsStart : Math.floor(Date.now() / 1000),
-    tsEnd: typeof body.tsEnd === 'number' ? body.tsEnd : null,
-    notes: body.notes || undefined,
-    createdAt: new Date().toISOString(),
-  };
-
-  const file = await getTestDeployments();
-  file.deployments.push(deployment);
-  await saveTestDeployments(file);
-
-  return NextResponse.json({ ok: true, deployment });
 }
 
 export async function DELETE(request: NextRequest) {
-  if (!(await isAuthed(request))) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-  }
+  try {
+    if (!(await isAuthed(request))) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
 
-  const { searchParams } = request.nextUrl;
-  const id = searchParams.get('id');
-  if (!id) {
-    return NextResponse.json({ error: 'id param is required' }, { status: 400 });
-  }
+    const { searchParams } = request.nextUrl;
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'id param is required' }, { status: 400 });
+    }
 
-  const file = await getTestDeployments();
-  const before = file.deployments.length;
-  file.deployments = file.deployments.filter((d) => d.id !== id);
-  if (file.deployments.length === before) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
-  await saveTestDeployments(file);
+    const file = await getTestDeployments();
+    const before = file.deployments.length;
+    file.deployments = file.deployments.filter((d) => d.id !== id);
+    if (file.deployments.length === before) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+    await saveTestDeployments(file);
 
-  return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Failed to remove test deployment' }, { status: 500 });
+  }
 }
