@@ -65,14 +65,37 @@ async function fetchMotusReceivers(): Promise<Record<string, MotusDevice>> {
     }
   }
 
-  const result: Record<string, MotusDevice> = {};
+  // The same serial number can appear multiple times in receivers.json under
+  // different sensorIDs (re-registrations, hardware swaps, test entries, etc).
+  // Group them so we can pick whichever sensorID actually has deployment data,
+  // instead of just keeping whichever happened to come last in the list.
+  const sensorIdsBySerno: Record<string, number[]> = {};
   for (const rec of receiverList) {
     const r = rec as Record<string, unknown>;
     const serno = String(r.serno ?? r.serialNumber ?? r.receiverSerialNumber ?? '');
     if (!serno) continue;
+    if (!(serno in sensorIdsBySerno)) sensorIdsBySerno[serno] = [];
 
     const sensorId = r.sensorID ?? r.sensorId;
-    const stationId = sensorId != null ? stationIdBySensor[String(sensorId)] : undefined;
+    if (sensorId != null) sensorIdsBySerno[serno].push(Number(sensorId));
+  }
+
+  const result: Record<string, MotusDevice> = {};
+  for (const [serno, sensorIds] of Object.entries(sensorIdsBySerno)) {
+    let bestSensorId: number | undefined;
+    let bestScore: { active: boolean; tsStart: number } | undefined;
+    for (const sensorId of sensorIds) {
+      const score = bestDeploymentBySensor[String(sensorId)];
+      if (!score) continue;
+      const isBetter =
+        !bestScore || (score.active && !bestScore.active) || (score.active === bestScore.active && score.tsStart > bestScore.tsStart);
+      if (isBetter) {
+        bestScore = score;
+        bestSensorId = sensorId;
+      }
+    }
+
+    const stationId = bestSensorId != null ? stationIdBySensor[String(bestSensorId)] : undefined;
     const station = stationId != null ? stationById[String(stationId)] : undefined;
 
     result[serno] = {
