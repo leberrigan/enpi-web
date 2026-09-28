@@ -1,6 +1,7 @@
 'use client';
 
-import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import { MapContainer, TileLayer, CircleMarker, Marker, Popup } from 'react-leaflet';
 import { useRouter } from 'next/navigation';
 import type { FleetDevice, DeviceStatus } from '@/types';
 import 'leaflet/dist/leaflet.css';
@@ -15,6 +16,19 @@ const statusColor: Record<DeviceStatus, string> = {
   offline: '#dc2626',
   unknown: '#6b7280',
 };
+
+// Test deployments (manually entered, not from Motus) get a distinct marker:
+// a colored ring with a white center and a "T", instead of a solid dot.
+function testDeploymentIcon(status: DeviceStatus): L.DivIcon {
+  const color = statusColor[status];
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid ${color};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:${color};">T</div>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+    popupAnchor: [0, -10],
+  });
+}
 
 export default function FleetMapInner({ devices }: Props) {
   const router = useRouter();
@@ -40,6 +54,42 @@ export default function FleetMapInner({ devices }: Props) {
       />
       {devices.map((d) => {
         if (!d.motus) return null;
+        const popup = (
+          <Popup>
+            <div className="text-sm">
+              <p className="font-semibold">
+                {d.motus.stationName}
+                {d.motus.isTestDeployment && (
+                  <span className="ml-1 text-xs text-blue-600 font-medium">(test)</span>
+                )}
+              </p>
+              <p className="text-gray-500 font-mono text-xs">{d.deviceId}</p>
+              <p className="text-gray-600 mt-1">Last upload: {d.record.lastSeen}</p>
+              <button
+                onClick={() => router.push(`/device/${encodeURIComponent(d.deviceId)}`)}
+                className="mt-2 text-blue-600 hover:underline text-xs"
+              >
+                View details →
+              </button>
+            </div>
+          </Popup>
+        );
+
+        if (d.motus.isTestDeployment) {
+          return (
+            <Marker
+              key={d.deviceId}
+              position={[d.motus.latitude, d.motus.longitude]}
+              icon={testDeploymentIcon(d.status)}
+              eventHandlers={{
+                click: () => router.push(`/device/${encodeURIComponent(d.deviceId)}`),
+              }}
+            >
+              {popup}
+            </Marker>
+          );
+        }
+
         return (
           <CircleMarker
             key={d.deviceId}
@@ -55,19 +105,7 @@ export default function FleetMapInner({ devices }: Props) {
               click: () => router.push(`/device/${encodeURIComponent(d.deviceId)}`),
             }}
           >
-            <Popup>
-              <div className="text-sm">
-                <p className="font-semibold">{d.motus.stationName}</p>
-                <p className="text-gray-500 font-mono text-xs">{d.deviceId}</p>
-                <p className="text-gray-600 mt-1">Last upload: {d.record.lastSeen}</p>
-                <button
-                  onClick={() => router.push(`/device/${encodeURIComponent(d.deviceId)}`)}
-                  className="mt-2 text-blue-600 hover:underline text-xs"
-                >
-                  View details →
-                </button>
-              </div>
-            </Popup>
+            {popup}
           </CircleMarker>
         );
       })}

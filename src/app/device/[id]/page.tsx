@@ -3,8 +3,9 @@ import DeviceSummaryCards from '@/components/DeviceSummaryCards';
 import AirCharts from '@/components/AirCharts';
 import LightChart from '@/components/LightChart';
 import DownloadPanel from '@/components/DownloadPanel';
+import TestDeploymentPanel from '@/components/TestDeploymentPanel';
 import { getFleetManifest, getAirSummaries, getLightSummaries } from '@/lib/s3';
-import { getMotusDevice } from '@/lib/motus';
+import { getDeviceLocation, getDeviceTestDeployments } from '@/lib/fleet';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { AirDailySummary, LightDailySummary } from '@/types';
@@ -24,7 +25,11 @@ export default async function DevicePage({ params, searchParams }: PageProps) {
   const record = manifest?.devices[deviceId];
   if (!record) notFound();
 
-  const motus = await getMotusDevice(deviceId);
+  const [motus, testDeployments] = await Promise.all([
+    getDeviceLocation(deviceId),
+    getDeviceTestDeployments(deviceId),
+  ]);
+  const hasValidLocation = !!motus && motus.latitude !== 0 && motus.longitude !== 0;
 
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
@@ -64,7 +69,14 @@ export default async function DevicePage({ params, searchParams }: PageProps) {
               <div className="mt-1 flex flex-wrap gap-4 text-sm text-gray-500">
                 <span>ID: <code className="text-gray-800 text-xs bg-gray-100 px-1 rounded">{deviceId}</code></span>
                 <span>Version: {record.version}</span>
-                {motus && <span>Location: {motus.latitude.toFixed(4)}, {motus.longitude.toFixed(4)}</span>}
+                {hasValidLocation && motus && (
+                  <span>
+                    Location: {motus.latitude.toFixed(4)}, {motus.longitude.toFixed(4)}
+                    {motus.isTestDeployment && (
+                      <span className="ml-1 text-xs text-blue-600 font-medium">(test deployment)</span>
+                    )}
+                  </span>
+                )}
                 <span>Last upload: {record.lastSeen}</span>
                 <span>Since: {record.firstSeen}</span>
               </div>
@@ -87,6 +99,10 @@ export default async function DevicePage({ params, searchParams }: PageProps) {
             </div>
           </div>
         </div>
+
+        {(!hasValidLocation || testDeployments.length > 0) && (
+          <TestDeploymentPanel deviceId={deviceId} initialDeployments={testDeployments} />
+        )}
 
         {/* Summary cards */}
         <DeviceSummaryCards latestAir={latestAir ?? null} latestLight={latestLight ?? null} />

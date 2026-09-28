@@ -71,6 +71,8 @@ export interface MotusDevice {
   latitude: number;
   longitude: number;
   countryCode?: string;
+  /** True when this location came from this app's own test-deployments table, not Motus. */
+  isTestDeployment?: boolean;
 }
 
 export type DeviceStatus = 'active' | 'stale' | 'offline' | 'unknown';
@@ -82,4 +84,24 @@ export interface FleetDevice {
   status: DeviceStatus;
   /** False when the device's most recent upload parsed but every sensor reading in it was NA. */
   hasData: boolean;
+}
+
+// A manually-entered location for a receiver that has no public Motus
+// deployment covering the current time window (e.g. an undocumented test
+// deployment). Kept separate from Motus data and only used as a fallback.
+export interface TestDeployment {
+  id: string;
+  deviceId: string;
+  stationName: string;
+  latitude: number;
+  longitude: number;
+  /** Epoch seconds. Window works the same as a Motus deployment: null tsEnd = ongoing. */
+  tsStart: number;
+  tsEnd: number | null;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface TestDeploymentsFile {
+  deployments: TestDeployment[];
 }

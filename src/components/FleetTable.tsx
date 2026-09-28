@@ -38,6 +38,9 @@ export default function FleetTable({ devices }: Props) {
                   <Link href={`/device/${encodeURIComponent(d.deviceId)}`} className="block">
                     <p className="font-medium text-gray-900 text-xs">
                       {d.motus?.stationName ?? d.deviceId}
+                      {d.motus?.isTestDeployment && (
+                        <span className="ml-1 text-blue-600 font-medium">(test)</span>
+                      )}
                     </p>
                     <p className="text-gray-400 text-xs font-mono">{d.deviceId}</p>
                     {!hasLocation && (

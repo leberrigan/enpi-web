@@ -77,6 +77,15 @@ function isBetterCandidate(candidate: LocationCandidate, current: LocationCandid
   );
 }
 
+// A deployment only tells us where a receiver *is* while it's actually
+// within that deployment's time range. Once a deployment ends and no new
+// one has been recorded, the receiver may well have been moved (e.g. to an
+// undocumented test location) — so its last known station should no longer
+// be treated as its current location.
+export function isWithinWindow(tsStart: number, tsEnd: number | null, now: number): boolean {
+  return tsStart <= now && (tsEnd == null || tsEnd >= now);
+}
+
 // Cache for 24 hours via Next.js fetch cache
 async function fetchMotusReceivers(): Promise<Record<string, MotusDevice>> {
   const [receiversRes, deploymentsRes, stationsRes, officialCsvRes] = await Promise.all([
@@ -109,10 +118,12 @@ async function fetchMotusReceivers(): Promise<Record<string, MotusDevice>> {
     };
   }
 
+  const now = Date.now() / 1000;
+
   // stationDeployments.json links a receiver (by sensorID) to a station over a
   // time range. A receiver can have several deployments over its lifetime, so
-  // pick the currently-active one (tsEnd == null), falling back to the most
-  // recent by tsStart.
+  // only deployments whose window actually covers "now" are considered —
+  // an expired deployment no longer tells us where the receiver currently is.
   const stationIdBySensor: Record<string, number> = {};
   const bestDeploymentBySensor: Record<string, { active: boolean; tsStart: number }> = {};
   for (const dep of deploymentList) {
@@ -121,9 +132,12 @@ async function fetchMotusReceivers(): Promise<Record<string, MotusDevice>> {
     const stationId = d.stationID;
     if (sensorId == null || stationId == null) continue;
 
-    const key = String(sensorId);
-    const active = d.tsEnd == null;
+    const tsEnd = d.tsEnd == null ? null : Number(d.tsEnd);
     const tsStart = Number(d.tsStart ?? 0);
+    if (!isWithinWindow(tsStart, tsEnd, now)) continue;
+
+    const key = String(sensorId);
+    const active = tsEnd == null;
     const current = bestDeploymentBySensor[key];
 
     const isBetter =
@@ -173,16 +187,19 @@ async function fetchMotusReceivers(): Promise<Record<string, MotusDevice>> {
 
   // The official deployment history export carries lat/lon directly and is
   // keyed by the receiver's serial number (receiverID), so it needs no join
-  // through sensorID/stationID at all.
+  // through sensorID/stationID at all. Same in-window rule applies.
   for (const row of officialDeploymentRows) {
     const serno = String(row.receiverID ?? '');
     const lat = Number(row.latitude);
     const lon = Number(row.longitude);
     if (!serno || !Number.isFinite(lat) || !Number.isFinite(lon) || (lat === 0 && lon === 0)) continue;
 
-    const tsEnd = row.tsEnd;
-    const active = row.deploymentStatus === 'active' || tsEnd == null || tsEnd === '';
+    const rawTsEnd = row.tsEnd;
+    const tsEnd = rawTsEnd == null || rawTsEnd === '' ? null : Number(rawTsEnd);
     const tsStart = Number(row.tsStart ?? 0);
+    if (!isWithinWindow(tsStart, tsEnd, now)) continue;
+
+    const active = tsEnd == null;
     addCandidate(serno, { active, tsStart, name: String(row.siteName ?? row.deploymentName ?? ''), lat, lon });
   }
 

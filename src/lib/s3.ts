@@ -2,9 +2,10 @@ import {
   S3Client,
   GetObjectCommand,
   ListObjectsV2Command,
+  PutObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import type { FleetManifest, AirDailySummary, LightDailySummary } from '@/types';
+import type { FleetManifest, AirDailySummary, LightDailySummary, TestDeploymentsFile } from '@/types';
 
 function createClient(): S3Client {
   return new S3Client({
@@ -32,6 +33,25 @@ async function getJsonObject<T>(key: string): Promise<T | null> {
 
 export async function getFleetManifest(): Promise<FleetManifest | null> {
   return getJsonObject<FleetManifest>('fleet-manifest.json');
+}
+
+const TEST_DEPLOYMENTS_KEY = 'test-deployments.json';
+
+export async function getTestDeployments(): Promise<TestDeploymentsFile> {
+  const file = await getJsonObject<TestDeploymentsFile>(TEST_DEPLOYMENTS_KEY);
+  return file ?? { deployments: [] };
+}
+
+export async function saveTestDeployments(file: TestDeploymentsFile): Promise<void> {
+  const client = createClient();
+  await client.send(
+    new PutObjectCommand({
+      Bucket: BUCKET,
+      Key: TEST_DEPLOYMENTS_KEY,
+      Body: JSON.stringify(file),
+      ContentType: 'application/json',
+    }),
+  );
 }
 
 export async function getAirSummary(
