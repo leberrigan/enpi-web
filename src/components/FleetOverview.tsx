@@ -34,7 +34,7 @@ export default function FleetOverview({ devices }: Props) {
             onChange={(e) => setOnlyWithData(e.target.checked)}
             className="rounded border-gray-300"
           />
-          Only show stations with data ({withDataCount}/{devices.length})
+          Only show stations with sensors ({withDataCount}/{devices.length})
         </label>
       </div>
 
