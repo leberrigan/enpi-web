@@ -42,7 +42,7 @@ export default function FleetOverview({ devices }: Props) {
         <div className="lg:col-span-3 space-y-2">
           <FleetMap devices={mappableDevices} />
           {mappableDevices.length === 0 && visibleDevices.length > 0 && (
-            <p className="text-xs text-amber-600 px-1">
+            <p className="text-xs status-text-warning px-1">
               No devices found in the Motus database with valid coordinates — map is empty.
               Devices are listed in the table on the right. If your receivers are registered
               in Motus, their serial numbers (e.g. <code>SG-BC4ERPI3CF2A</code>) must match
@@ -50,7 +50,7 @@ export default function FleetOverview({ devices }: Props) {
             </p>
           )}
           {mappableDevices.length > 0 && mappableDevices.length < visibleDevices.length && (
-            <p className="text-xs text-amber-600 px-1">
+            <p className="text-xs status-text-warning px-1">
               {visibleDevices.length - mappableDevices.length} device(s) not shown on map — no Motus
               coordinates found.
             </p>

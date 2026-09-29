@@ -1,3 +1,41 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  /* Local fallback resolution for the shared Motus tokens (--motus-*) used
+     below in color-mix(), which can't safely take an undefined var(). Each
+     one resolves to the shared token when /shared/motus-tools.css has
+     loaded, or falls back to that file's own documented value otherwise
+     (e.g. on Vercel, where /shared/ 404s) — not a competing copy of the
+     design system, just a safe default for the handful of tokens this file
+     touches. See Motus AWS repo's STYLE_GUIDE.md. */
+  --enpi-success: var(--motus-success, color-mix(in srgb, #9ad54f 70%, black));
+  --enpi-warning: var(--motus-warning, color-mix(in srgb, #eed931 70%, black));
+  --enpi-danger: var(--motus-danger, #da4632);
+  --enpi-light: var(--motus-light, #f2f2f2);
+  --enpi-muted: var(--motus-muted, #6c757d);
+  --enpi-radius: var(--motus-radius, 0.25rem);
+}
+
+/* Small status-tint helpers. Tailwind's opacity modifiers can't tint an
+   arbitrary var()-based color, so these mirror the shared stylesheet's
+   .badge/.alert formulas instead of inventing new hex values. */
+.status-pill-success { background: color-mix(in srgb, var(--enpi-success) 18%, white); color: color-mix(in srgb, var(--enpi-success) 70%, black); }
+.status-pill-warning { background: color-mix(in srgb, var(--enpi-warning) 18%, white); color: color-mix(in srgb, var(--enpi-warning) 55%, black); }
+.status-pill-danger { background: color-mix(in srgb, var(--enpi-danger) 15%, white); color: color-mix(in srgb, var(--enpi-danger) 65%, black); }
+.status-pill-muted { background: var(--enpi-light); color: var(--enpi-muted); }
+
+.status-banner-success {
+  background: color-mix(in srgb, var(--enpi-success) 15%, white);
+  border: 1px solid var(--enpi-success);
+  color: color-mix(in srgb, var(--enpi-success) 65%, black);
+  border-radius: var(--enpi-radius);
+}
+.status-banner-danger {
+  background: color-mix(in srgb, var(--enpi-danger) 12%, white);
+  border: 1px solid var(--enpi-danger);
+  color: color-mix(in srgb, var(--enpi-danger) 65%, black);
+  border-radius: var(--enpi-radius);
+}
+.status-text-warning { color: color-mix(in srgb, var(--enpi-warning) 55%, black); }

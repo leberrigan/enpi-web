@@ -121,7 +121,7 @@ export default function TestDeploymentPanel({ deviceId, initialDeployments, data
                 <p className="text-xs text-gray-400">
                   {new Date(d.tsStart * 1000).toLocaleDateString()} –{' '}
                   {d.tsEnd == null ? (
-                    <span className="text-green-600">Ongoing</span>
+                    <span className="text-motus-success">Ongoing</span>
                   ) : (
                     new Date(d.tsEnd * 1000).toLocaleDateString()
                   )}
@@ -129,7 +129,7 @@ export default function TestDeploymentPanel({ deviceId, initialDeployments, data
               </div>
               <button
                 onClick={() => handleDelete(d.id)}
-                className="text-xs text-red-500 hover:underline"
+                className="text-xs text-motus-danger hover:underline"
               >
                 Remove
               </button>
@@ -222,7 +222,7 @@ export default function TestDeploymentPanel({ deviceId, initialDeployments, data
           onChange={(e) => setNotes(e.target.value)}
           className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
         />
-        {error && <p className="text-xs text-red-500">{error}</p>}
+        {error && <p className="text-xs text-motus-danger">{error}</p>}
         <div className="flex gap-2">
           <button
             type="submit"

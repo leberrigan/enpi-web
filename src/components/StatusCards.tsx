@@ -13,10 +13,10 @@ export default function StatusCards({ devices }: Props) {
 
   const cards = [
     { label: 'Total Devices', value: total, color: 'text-gray-900' },
-    { label: 'Active with sensors', value: activeWithSensors, color: 'text-green-600' },
-    { label: 'Active without sensors', value: activeWithoutSensors, color: 'text-gray-500' },
-    { label: 'Stale with sensors', value: staleWithSensors, color: 'text-yellow-600' },
-    { label: 'Offline with sensors', value: offlineWithSensors, color: 'text-red-600' },
+    { label: 'Active with sensors', value: activeWithSensors, color: 'text-motus-success' },
+    { label: 'Active without sensors', value: activeWithoutSensors, color: 'text-motus-muted' },
+    { label: 'Stale with sensors', value: staleWithSensors, color: 'status-text-warning' },
+    { label: 'Offline with sensors', value: offlineWithSensors, color: 'text-motus-danger' },
   ];
 
   return (

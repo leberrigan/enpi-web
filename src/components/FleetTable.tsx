@@ -6,10 +6,10 @@ interface Props {
 }
 
 const statusStyle: Record<DeviceStatus, string> = {
-  active: 'bg-green-100 text-green-700',
-  stale: 'bg-yellow-100 text-yellow-700',
-  offline: 'bg-red-100 text-red-700',
-  unknown: 'bg-gray-100 text-gray-500',
+  active: 'status-pill-success',
+  stale: 'status-pill-warning',
+  offline: 'status-pill-danger',
+  unknown: 'status-pill-muted',
 };
 
 export default function FleetTable({ devices }: Props) {
@@ -39,17 +39,17 @@ export default function FleetTable({ devices }: Props) {
                     <p className="font-medium text-gray-900 text-xs">
                       {d.motus?.stationName ?? d.deviceId}
                       {d.motus?.isTestDeployment && (
-                        <span className="ml-1 text-blue-600 font-medium">(test)</span>
+                        <span className="ml-1 text-motus-secondary font-medium">(test)</span>
                       )}
                     </p>
                     <p className="text-gray-400 text-xs font-mono">{d.deviceId}</p>
                     {!hasLocation && (
-                      <p className="text-xs text-amber-600 mt-0.5" title="This device has no coordinates in the Motus database and will not appear on the map">
+                      <p className="text-xs status-text-warning mt-0.5" title="This device has no coordinates in the Motus database and will not appear on the map">
                         No map location
                       </p>
                     )}
                     {!d.hasData && (
-                      <p className="text-xs text-red-500 mt-0.5" title="This device's most recent upload parsed but every sensor reading in it was NA">
+                      <p className="text-xs text-motus-danger mt-0.5" title="This device's most recent upload parsed but every sensor reading in it was NA">
                         No data (NA only)
                       </p>
                     )}

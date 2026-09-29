@@ -10,9 +10,11 @@ interface Props {
   onChange: (lat: number, lon: number) => void;
 }
 
+// Raw inline style handed to Leaflet, not a Tailwind class, so it needs its
+// own fallback (matching motus-tools.css) in case /shared/ 404s (e.g. Vercel).
 const pinIcon = L.divIcon({
   className: '',
-  html: '<div style="width:18px;height:18px;border-radius:50% 50% 50% 0;background:#2563eb;border:2px solid #fff;transform:rotate(-45deg);box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>',
+  html: '<div style="width:18px;height:18px;border-radius:50% 50% 50% 0;background:var(--motus-primary, #548325);border:2px solid #fff;transform:rotate(-45deg);box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>',
   iconSize: [18, 18],
   iconAnchor: [9, 18],
   popupAnchor: [0, -18],

@@ -76,7 +76,7 @@ export default async function DevicePage({ params, searchParams }: PageProps) {
                   <span>
                     Location: {motus.latitude.toFixed(4)}, {motus.longitude.toFixed(4)}
                     {motus.isTestDeployment && (
-                      <span className="ml-1 text-xs text-blue-600 font-medium">(test deployment)</span>
+                      <span className="ml-1 text-xs text-motus-secondary font-medium">(test deployment)</span>
                     )}
                   </span>
                 )}

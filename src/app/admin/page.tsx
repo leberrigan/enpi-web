@@ -62,7 +62,7 @@ export default function AdminPage() {
           </button>
 
           {status === 'done' && result && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-sm text-green-800 space-y-1">
+            <div className="status-banner-success p-4 text-sm space-y-1">
               <p>
                 Found <strong>{result.devices}</strong> device(s) across{' '}
                 <strong>{result.filesScanned}</strong> files. Fleet manifest written to S3.
@@ -73,7 +73,7 @@ export default function AdminPage() {
                   background — summaries will appear on the dashboard in a minute or two.
                 </p>
               ) : (
-                <p className="text-yellow-700">
+                <p className="status-text-warning">
                   <strong>LAMBDA_FUNCTION_NAME</strong> env var not set — summaries were not
                   generated. Add it to Vercel and redeploy, then run bootstrap again.
                 </p>
@@ -85,7 +85,7 @@ export default function AdminPage() {
           )}
 
           {status === 'error' && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+            <div className="status-banner-danger p-4 text-sm">
               Error: {error}
             </div>
           )}

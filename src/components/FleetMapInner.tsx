@@ -10,11 +10,17 @@ interface Props {
   devices: FleetDevice[];
 }
 
+// Referencing the shared Motus tokens (/shared/motus-tools.css) rather than
+// hardcoded hex, so the map dots match FleetTable's status pills. These are
+// raw strings handed to Leaflet, not Tailwind classes, so they need their
+// own fallback (Tailwind's config-level fallback doesn't cover this) —
+// values match motus-tools.css's own formulas, in case /shared/ 404s (e.g.
+// on Vercel).
 const statusColor: Record<DeviceStatus, string> = {
-  active: '#16a34a',
-  stale: '#ca8a04',
-  offline: '#dc2626',
-  unknown: '#6b7280',
+  active: 'var(--motus-success, color-mix(in srgb, #9ad54f 70%, black))',
+  stale: 'var(--motus-warning, color-mix(in srgb, #eed931 70%, black))',
+  offline: 'var(--motus-danger, #da4632)',
+  unknown: 'var(--motus-muted, #6c757d)',
 };
 
 // Test deployments (manually entered, not from Motus) get a distinct marker:
@@ -60,14 +66,14 @@ export default function FleetMapInner({ devices }: Props) {
               <p className="font-semibold">
                 {d.motus.stationName}
                 {d.motus.isTestDeployment && (
-                  <span className="ml-1 text-xs text-blue-600 font-medium">(test)</span>
+                  <span className="ml-1 text-xs text-motus-secondary font-medium">(test)</span>
                 )}
               </p>
               <p className="text-gray-500 font-mono text-xs">{d.deviceId}</p>
               <p className="text-gray-600 mt-1">Last upload: {d.record.lastSeen}</p>
               <button
                 onClick={() => router.push(`/device/${encodeURIComponent(d.deviceId)}`)}
-                className="mt-2 text-blue-600 hover:underline text-xs"
+                className="mt-2 text-motus-secondary hover:underline text-xs"
               >
                 View details →
               </button>
