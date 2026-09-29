@@ -13,13 +13,12 @@ export default function NavBar() {
 
   return (
     // Matches the shared .tool-header pattern (back link to the tool hub +
-    // this tool's own <h1>) — see Motus AWS repo's STYLE_GUIDE.md. The
-    // back link resolves once ENPI is deployed behind the shared domain;
-    // until then it stays within this app.
+    // this tool's own <h1>) — see Motus AWS repo's STYLE_GUIDE.md. Plain <a>
+    // rather than next/link since this points off-app to the shared hub.
     <header className="bg-white border-b border-motus-border px-6 py-3 flex flex-wrap items-center justify-between gap-2">
-      <Link href="/" className="font-bold text-sm text-motus-primary hover:text-motus-primary-hover whitespace-nowrap">
+      <a href="https://motusaws.duckdns.org/" className="font-bold text-sm text-motus-primary hover:text-motus-primary-hover whitespace-nowrap">
         &lsaquo; Motus Tools
-      </Link>
+      </a>
       <Link href="/dashboard" className="flex items-center gap-2 text-lg">
         <span className="font-bold text-motus-dark">ENPI</span>
         <span className="text-motus-muted font-normal text-sm">Fleet Dashboard</span>
